@@ -223,48 +223,97 @@
             <div id="remindersFeed" class="feed"></div>
           </section>
 
-          <!-- CONCIERGE INFO -->
-          <section class="card">
-            <h2 class="h2">Concierge Information</h2>
-            <p class="muted">Quick access info for airports + airline + emergency assistance.</p>
+          <!-- CONCIERGE INFO (Individual Contact) -->
+<section class="card">
+  <h2 class="h2">Concierge Information</h2>
+  <p class="muted">Your personal concierge contact for quick help during your trip.</p>
 
-            <div class="concierge">
-              <div class="concierge-card">
-                <div class="concierge-title">Airline: Air France</div>
-                <div class="concierge-text">
-                  Flight numbers:
-                  <strong>AF 815</strong> (NBO → CDG),
-                  <strong>AF 692</strong> (CDG → RDU)
-                </div>
-                <div class="row gap wrap">
-                  <button class="btn btn-ghost" type="button" data-action="copy" data-copy="Air France flights: AF 815 (NBO→CDG), AF 692 (CDG→RDU)">Copy flight info</button>
-                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="Tip: Use the Air France app to track gates, delays, and baggage.">Airline tip</button>
-                </div>
-              </div>
+  <div class="concierge">
+    <div class="concierge-card">
+      <div class="concierge-title">Primary Concierge</div>
+      <div class="concierge-text">
+        <strong>Name:</strong> Alex Morgan<br/>
+        <strong>Role:</strong> Travel Concierge (24/7 Support)<br/>
+        <strong>Phone/WhatsApp:</strong> +33 6 12 34 56 78<br/>
+        <strong>Email:</strong> alex.morgan.concierge@example.com<br/>
+        <strong>Location:</strong> Paris (CDG Support Desk)
+      </div>
 
-              <div class="concierge-card">
-                <div class="concierge-title">Airports</div>
-                <div class="concierge-text">
-                  <strong>NBO</strong> (Nairobi) • <strong>CDG</strong> (Paris) • <strong>RDU</strong> (Raleigh/Durham)
-                </div>
-                <div class="row gap wrap">
-                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="At CDG: check terminal + gate first, then confirm transfer steps (security/immigration).">CDG tip</button>
-                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="At RDU: plan ground transport early (ride-hailing, shuttle, pickup) and verify baggage claim belt.">RDU tip</button>
-                </div>
-              </div>
+      <div class="row gap wrap" style="margin-top:10px;">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-action="copy"
+          data-copy="Concierge: Alex Morgan | WhatsApp: +33 6 12 34 56 78 | Email: alex.morgan.concierge@example.com | Location: Paris (CDG Support Desk)"
+        >
+          Copy contact
+        </button>
 
-              <div class="concierge-card">
-                <div class="concierge-title">Emergency & Help</div>
-                <div class="concierge-text">
-                  Keep these ready: embassy contact, insurance hotline, emergency contact, and a card with allergies/medical notes.
-                </div>
-                <div class="row gap wrap">
-                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="If you lose a passport: report immediately, contact your embassy/consulate, and keep copies ready.">Lost passport</button>
-                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="If baggage is delayed: file a report before leaving the airport, keep the reference number, and save receipts.">Delayed baggage</button>
-                </div>
-              </div>
-            </div>
-        </section>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-action="toast"
+          data-toast="Concierge tip: Message Alex on WhatsApp with your flight number + current terminal if you need urgent guidance."
+        >
+          Quick tip
+        </button>
+      </div>
+    </div>
+
+    <div class="concierge-card">
+      <div class="concierge-title">What Your Concierge Can Help With</div>
+      <div class="concierge-text">
+        • Gate & terminal directions at CDG<br/>
+        • Lounge suggestions & airport facilities<br/>
+        • Rebooking guidance if delays happen<br/>
+        • Transport support on arrival (RDU)<br/>
+        • Lost baggage steps and support
+      </div>
+
+      <div class="row gap wrap" style="margin-top:10px;">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-action="toast"
+          data-toast="If your gate changes: send Alex your new gate, your current location, and boarding time."
+        >
+          Gate change help
+        </button>
+
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-action="toast"
+          data-toast="If there’s a delay: ask Alex about rebooking options and what to do next before leaving the terminal."
+        >
+          Delay help
+        </button>
+      </div>
+    </div>
+
+    <div class="concierge-card">
+      <div class="concierge-title">Backup Contact</div>
+      <div class="concierge-text">
+        <strong>Name:</strong> Samira Diallo<br/>
+        <strong>Role:</strong> Backup Concierge (CDG Transfers)<br/>
+        <strong>Phone/WhatsApp:</strong> +33 7 98 76 54 32<br/>
+        <strong>Email:</strong> samira.diallo.concierge@example.com
+      </div>
+
+      <div class="row gap wrap" style="margin-top:10px;">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          data-action="copy"
+          data-copy="Backup Concierge: Samira Diallo | WhatsApp: +33 7 98 76 54 32 | Email: samira.diallo.concierge@example.com"
+        >
+          Copy backup contact
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
         </div>
       </div>
     </section>
@@ -273,3 +322,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+
