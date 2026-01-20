@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" href="logo.png" type="image/x-icon">
+  <title>Infinity Flight Companion </title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">  </div>
+      <div>
+        <div class="brand-title">Infinity Flight Companion</div>
+        <div class="brand-sub">Plans • Documents • Reminders • Concierge</div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div id="userBadge" class="user-badge hidden">
+        <span class="dot"></span>
+        <span id="badgeName">User</span>
+      </div>
+      <button id="logoutBtn" class="btn btn-ghost hidden">Logout</button>
+    </div>
+  </header>
+
+  <!-- Toast / Alerts -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <!-- MAIN -->
+  <main class="container">
+    <!-- LOGIN -->
+    <section id="loginView" class="card">
+      <h1 class="h1">Login</h1>
+     
+
+      <form id="loginForm" class="form">
+        <label class="label">
+          Username
+          <input id="loginUsername" class="input" type="text" autocomplete="username" placeholder="Enter username" required />
+        </label>
+
+        <label class="label">
+          Password
+          <input id="loginPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required />
+        </label>
+
+        <div class="row gap">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+          <button id="fillDemo" class="btn btn-ghost" type="button">Fill demo credentials</button>
+        </div>
+
+        <div id="loginError" class="error hidden"></div>
+      </form>
+
+      <div class="divider"></div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="appView" class="hidden">
+      <div class="grid">
+        <!-- LEFT COLUMN -->
+        <div class="col">
+          <!-- USER + QUICK ACTIONS -->
+          <section class="card">
+            <div class="row space">
+              <div>
+                <h2 class="h2">Welcome</h2>
+                <p class="muted">Logged in as: <strong id="usernameDisplay"></strong></p>
+              </div>
+              <div class="row gap">
+                <button id="enableNotifs" class="btn btn-ghost" type="button">Enable Notifications</button>
+                <button id="startReminders" class="btn btn-primary" type="button">Start Reminders</button>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-title">Real-time reminders (based on 20/02/2026)</div>
+              <div class="info-text">
+                Reminders are scheduled using the updated trip date:
+                <strong>Depart NBO on 20/02/2026 11:30 (GMT+3)</strong>.
+                If a reminder time has already passed when you start, it will be skipped automatically.
+              </div>
+            </div>
+
+            <div class="row wrap gap">
+              <div class="stat">
+                <div class="stat-label">Reminders status</div>
+                <div id="reminderStatus" class="stat-value">Not started</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Next reminder</div>
+                <div id="nextReminder" class="stat-value">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Layover guidance</div>
+                <div class="stat-value">Included</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FLIGHT PLAN -->
+          <section class="card">
+            <div class="row space">
+              <h2 class="h2">Your Flight Plan</h2>
+              <button id="copyPlan" class="btn btn-ghost" type="button">Copy Plan</button>
+            </div>
+
+            <div id="flightPlan" class="timeline"></div>
+
+            <div class="divider"></div>
+
+            <div class="row wrap gap">
+              <span class="tag">NBO → CDG</span>
+              <span class="tag">Layover: 7h 10m (CDG)</span>
+              <span class="tag">CDG → RDU</span>
+            </div>
+          </section>
+
+          <!-- LAYOVER: WHAT TO DO -->
+          <section class="card">
+            <h2 class="h2">What To Do on Layovers (CDG)</h2>
+            <p class="muted">
+              Follow this quick plan to reduce stress, avoid missed connections, and keep your documents ready.
+            </p>
+
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">Check your next gate and terminal immediately</div>
+                  <div class="step-text">Use airport screens or the airline app. Confirm gate changes every 30–45 minutes.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">Confirm if you need passport control / security transfer</div>
+                  <div class="step-text">International connections may require immigration and re-screening depending on terminals.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">Plan your buffer time</div>
+                  <div class="step-text">Aim to be near the next gate at least 60–90 minutes before boarding.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                  <div class="step-title">Refill water + light meal</div>
+                  <div class="step-text">Hydration helps. Avoid heavy meals if you’re prone to jet lag or nausea.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                  <div class="step-title">Charge devices + download offline docs</div>
+                  <div class="step-text">Boarding passes, passport scans, hotel details, contact list—save offline.</div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-num">6</div>
+                <div class="step-body">
+                  <div class="step-title">Rest smart</div>
+                  <div class="step-text">If you nap, set an alarm and keep valuables secured. Consider a lounge day-pass if needed.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col">
+          <!-- DOCUMENTS CHECKLIST -->
+          <section class="card">
+            <div class="row space">
+              <h2 class="h2">Important Documents</h2>
+              <button id="resetDocs" class="btn btn-ghost" type="button">Reset</button>
+            </div>
+            <p class="muted">Tick what you’ve prepared. Saved automatically in your browser.</p>
+
+            <div id="docsList" class="checklist"></div>
+
+            <div class="divider"></div>
+
+            <div class="row space">
+              <div class="muted small">Tip: Keep originals on you, copies in your carry-on, and digital copies offline.</div>
+              <button id="markAllDocs" class="btn btn-primary" type="button">Mark All</button>
+            </div>
+          </section>
+
+          <!-- IN-APP REMINDERS FEED -->
+          <section class="card">
+            <div class="row space">
+              <h2 class="h2">In-App Reminders</h2>
+              <button id="clearReminders" class="btn btn-ghost" type="button">Clear</button>
+            </div>
+
+            <div class="muted small">
+              Reminders include:
+              <span class="tag">Pre-departure</span>
+              <span class="tag">Airport</span>
+              <span class="tag">Boarding</span>
+              <span class="tag">In-flight</span>
+              <span class="tag">Approach</span>
+              <span class="tag">Layover</span>
+              <span class="tag">Connection</span>
+              <span class="tag">Arrival prep</span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div id="remindersFeed" class="feed"></div>
+          </section>
+
+          <!-- CONCIERGE INFO -->
+          <section class="card">
+            <h2 class="h2">Concierge Information</h2>
+            <p class="muted">Quick access info for airports + airline + emergency assistance.</p>
+
+            <div class="concierge">
+              <div class="concierge-card">
+                <div class="concierge-title">Airline: Air France</div>
+                <div class="concierge-text">
+                  Flight numbers:
+                  <strong>AF 815</strong> (NBO → CDG),
+                  <strong>AF 692</strong> (CDG → RDU)
+                </div>
+                <div class="row gap wrap">
+                  <button class="btn btn-ghost" type="button" data-action="copy" data-copy="Air France flights: AF 815 (NBO→CDG), AF 692 (CDG→RDU)">Copy flight info</button>
+                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="Tip: Use the Air France app to track gates, delays, and baggage.">Airline tip</button>
+                </div>
+              </div>
+
+              <div class="concierge-card">
+                <div class="concierge-title">Airports</div>
+                <div class="concierge-text">
+                  <strong>NBO</strong> (Nairobi) • <strong>CDG</strong> (Paris) • <strong>RDU</strong> (Raleigh/Durham)
+                </div>
+                <div class="row gap wrap">
+                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="At CDG: check terminal + gate first, then confirm transfer steps (security/immigration).">CDG tip</button>
+                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="At RDU: plan ground transport early (ride-hailing, shuttle, pickup) and verify baggage claim belt.">RDU tip</button>
+                </div>
+              </div>
+
+              <div class="concierge-card">
+                <div class="concierge-title">Emergency & Help</div>
+                <div class="concierge-text">
+                  Keep these ready: embassy contact, insurance hotline, emergency contact, and a card with allergies/medical notes.
+                </div>
+                <div class="row gap wrap">
+                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="If you lose a passport: report immediately, contact your embassy/consulate, and keep copies ready.">Lost passport</button>
+                  <button class="btn btn-ghost" type="button" data-action="toast" data-toast="If baggage is delayed: file a report before leaving the airport, keep the reference number, and save receipts.">Delayed baggage</button>
+                </div>
+              </div>
+            </div>
+        </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
