@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" href="logo.png" type="image/x-icon">
-  <title>Infinity Flight Companion </title>
+  <title>Infinity Flight Companion</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="logo">  </div>
+      <div class="logo">
+        <img src="logo.png" alt="Infinity Care Partners Logo" />
+      </div>
       <div>
         <div class="brand-title">Infinity Flight Companion</div>
         <div class="brand-sub">Plans • Documents • Reminders • Concierge</div>
@@ -19,6 +20,18 @@
     </div>
 
     <div class="topbar-right">
+      <button id="menuBtn" class="menu-btn hidden" type="button" aria-label="Open navigation" aria-expanded="false">
+        <span class="menu-bars" aria-hidden="true"></span>
+      </button>
+
+      <div class="profile-wrapper">
+        <input type="file" id="profileInput" accept="image/*" hidden />
+        <div id="profileAvatar" class="profile-avatar" title="Click to change profile picture">
+          <span id="avatarPlaceholder">+</span>
+          <img id="avatarImage" class="hidden" alt="Profile photo" />
+        </div>
+      </div>
+
       <div id="userBadge" class="user-badge hidden">
         <span class="dot"></span>
         <span id="badgeName">User</span>
@@ -27,25 +40,43 @@
     </div>
   </header>
 
-  <!-- Toast / Alerts -->
+  <div id="navOverlay" class="nav-overlay hidden" aria-hidden="true"></div>
+
+  <aside id="sideNav" class="side-nav hidden" aria-label="Side navigation">
+    <div class="side-nav-head">
+      <div class="side-nav-title">Menu</div>
+      <button id="closeNav" class="side-nav-close" type="button" aria-label="Close navigation">✕</button>
+    </div>
+
+    <div class="side-nav-list">
+      <button class="side-link active" type="button" data-view="welcomeCard">Welcome</button>
+      <button class="side-link" type="button" data-view="flightCard">Flight</button>
+      <button class="side-link" type="button" data-view="layoverCard">Layover</button>
+      <button class="side-link" type="button" data-view="remindersCard">Reminders</button>
+      <button class="side-link" type="button" data-view="documentsCard">Documents</button>
+      <button class="side-link" type="button" data-view="conciergeCard">Concierge</button>
+    </div>
+
+    <div class="side-nav-foot">
+      <div class="side-nav-note">Welcome is your home page.</div>
+    </div>
+  </aside>
+
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-  <!-- MAIN -->
   <main class="container">
-    <!-- LOGIN -->
     <section id="loginView" class="card">
       <h1 class="h1">Login</h1>
-     
 
       <form id="loginForm" class="form">
         <label class="label">
           Username
-          <input id="loginUsername" class="input" type="text" autocomplete="username" placeholder="Enter username" required />
+          <input id="loginUsername" class="input" type="text" autocomplete="username" required />
         </label>
 
         <label class="label">
           Password
-          <input id="loginPassword" class="input" type="password" autocomplete="current-password" placeholder="Enter password" required />
+          <input id="loginPassword" class="input" type="password" autocomplete="current-password" required />
         </label>
 
         <div class="row gap">
@@ -55,266 +86,152 @@
 
         <div id="loginError" class="error hidden"></div>
       </form>
-
-      <div class="divider"></div>
     </section>
 
-    <!-- DASHBOARD -->
     <section id="appView" class="hidden">
-      <div class="grid">
-        <!-- LEFT COLUMN -->
-        <div class="col">
-          <!-- USER + QUICK ACTIONS -->
-          <section class="card">
-            <div class="row space">
-              <div>
-                <h2 class="h2">Welcome</h2>
-                <p class="muted">Logged in as: <strong id="usernameDisplay"></strong></p>
-              </div>
-              <div class="row gap">
-                <button id="enableNotifs" class="btn btn-ghost" type="button">Enable Notifications</button>
-                <button id="startReminders" class="btn btn-primary" type="button">Start Reminders</button>
+      <div class="content-shell">
+        <section class="card" id="welcomeCard">
+          <div class="row space">
+            <div>
+              <h2 class="h2">Welcome</h2>
+              <p class="muted">Logged in as: <strong id="usernameDisplay"></strong></p>
+            </div>
+            <div class="row gap">
+              <button id="enableNotifs" class="btn btn-ghost" type="button">Enable Notifications</button>
+              <button id="startReminders" class="btn btn-primary" type="button">Start Reminders</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-box">
+            <div class="info-title">Employer & Company Information</div>
+            <div class="info-text" style="line-height:1.7;">
+              <strong>Employer:</strong> Infinity Care Partners<br/>
+              <strong>Employer Address:</strong> (Provided by employer)<br/>
+              <strong>Contact Person:</strong> (Assigned coordinator)<br/>
+              <strong>Company Address:</strong> (Company registered address)<br/><br/>
+              <strong>Mailing Address:</strong><br/>
+              International Office - Kenya<br/>
+              Centenary House, 2nd Floor, Suite 202<br/>
+              Ring Road, Westlands Nairobi, Kenya<br/>
+              Phone: (+254) 727-724-988
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-title">Real-time reminders (20/02/2026)</div>
+            <div class="info-text">
+              Flight reminders are scheduled from:
+              <strong>Depart NBO at 11:30 (GMT+3)</strong>.
+              Past reminders will be skipped automatically.
+            </div>
+          </div>
+
+          <div class="row wrap gap">
+            <div class="stat">
+              <div class="stat-label">Reminders status</div>
+              <div id="reminderStatus" class="stat-value">Not started</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Next reminder</div>
+              <div id="nextReminder" class="stat-value">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Layover guidance</div>
+              <div class="stat-value">Included</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card hidden" id="flightCard">
+          <div class="row space">
+            <h2 class="h2">Your Flight Plan</h2>
+            <button id="copyPlan" class="btn btn-ghost" type="button">Copy Plan</button>
+          </div>
+
+          <div id="flightPlan" class="timeline"></div>
+
+          <div class="divider"></div>
+
+          <div class="row wrap gap">
+            <span class="tag">NBO → CDG</span>
+            <span class="tag">Layover: 7h 10m (CDG)</span>
+            <span class="tag">CDG → RDU</span>
+          </div>
+        </section>
+
+        <section class="card hidden" id="layoverCard">
+          <h2 class="h2">What To Do on Layovers (CDG)</h2>
+          <p class="muted">Use this checklist to avoid missed connections and stay organized.</p>
+
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div><div class="step-title">Check next gate</div><div class="step-text">Monitor screens and airline app regularly.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div><div class="step-title">Confirm security or immigration</div><div class="step-text">Some transfers require re-screening.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div><div class="step-title">Be at gate early</div><div class="step-text">Arrive 60–90 minutes before boarding.</div></div></div>
+            <div class="step"><div class="step-num">4</div><div><div class="step-title">Hydrate and eat light</div><div class="step-text">Avoid heavy meals during long connections.</div></div></div>
+            <div class="step"><div class="step-num">5</div><div><div class="step-title">Charge devices</div><div class="step-text">Keep boarding passes and documents offline.</div></div></div>
+            <div class="step"><div class="step-num">6</div><div><div class="step-title">Rest carefully</div><div class="step-text">Set alarms and secure valuables.</div></div></div>
+          </div>
+        </section>
+
+        <section class="card hidden" id="remindersCard">
+          <div class="row space">
+            <h2 class="h2">In-App Reminders</h2>
+            <button id="clearReminders" class="btn btn-ghost" type="button">Clear</button>
+          </div>
+          <div class="divider"></div>
+          <div id="remindersFeed" class="feed"></div>
+        </section>
+
+        <section class="card hidden" id="documentsCard">
+          <div class="row space">
+            <h2 class="h2">Important Documents</h2>
+            <button id="resetDocs" class="btn btn-ghost" type="button">Reset</button>
+          </div>
+          <p class="muted">Selections save automatically.</p>
+          <div id="docsList" class="checklist"></div>
+          <div class="divider"></div>
+          <div class="row space">
+            <div class="muted small">Carry originals and offline copies.</div>
+            <button id="markAllDocs" class="btn btn-primary" type="button">Mark All</button>
+          </div>
+        </section>
+
+        <section class="card hidden" id="conciergeCard">
+          <h2 class="h2">Concierge Information</h2>
+          <p class="muted">Personal support during your journey.</p>
+
+          <div class="concierge">
+            <div class="concierge-card">
+              <div class="concierge-title">Primary Concierge</div>
+              <div class="concierge-text">
+                <strong>Name:</strong> Alex Morgan<br/>
+                <strong>Role:</strong> Travel Concierge (24/7)<br/>
+                <strong>Phone:</strong> +33 6 12 34 56 78<br/>
+                <strong>Email:</strong> alex.morgan.concierge@example.com<br/>
+                <strong>Location:</strong> Paris (CDG)
               </div>
             </div>
 
-            <div class="info-box">
-              <div class="info-title">Real-time reminders (based on 20/02/2026)</div>
-              <div class="info-text">
-                Reminders are scheduled using the updated trip date:
-                <strong>Depart NBO on 20/02/2026 11:30 (GMT+3)</strong>.
-                If a reminder time has already passed when you start, it will be skipped automatically.
+            <div class="concierge-card">
+              <div class="concierge-title">Backup Concierge</div>
+              <div class="concierge-text">
+                <strong>Email:</strong> deployment@infinitycarepartners.com
               </div>
             </div>
 
-            <div class="row wrap gap">
-              <div class="stat">
-                <div class="stat-label">Reminders status</div>
-                <div id="reminderStatus" class="stat-value">Not started</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Next reminder</div>
-                <div id="nextReminder" class="stat-value">—</div>
-              </div>
-              <div class="stat">
-                <div class="stat-label">Layover guidance</div>
-                <div class="stat-value">Included</div>
+            <div class="concierge-card">
+              <div class="concierge-title">Mailing Address</div>
+              <div class="concierge-text">
+                International Office - Kenya<br/>
+                Centenary House, 2nd Floor, Suite 202<br/>
+                Ring Road, Westlands Nairobi, Kenya<br/>
+                Phone: (+254) 727-724-988
               </div>
             </div>
-          </section>
-
-          <!-- FLIGHT PLAN -->
-          <section class="card">
-            <div class="row space">
-              <h2 class="h2">Your Flight Plan</h2>
-              <button id="copyPlan" class="btn btn-ghost" type="button">Copy Plan</button>
-            </div>
-
-            <div id="flightPlan" class="timeline"></div>
-
-            <div class="divider"></div>
-
-            <div class="row wrap gap">
-              <span class="tag">NBO → CDG</span>
-              <span class="tag">Layover: 7h 10m (CDG)</span>
-              <span class="tag">CDG → RDU</span>
-            </div>
-          </section>
-
-          <!-- LAYOVER: WHAT TO DO -->
-          <section class="card">
-            <h2 class="h2">What To Do on Layovers (CDG)</h2>
-            <p class="muted">
-              Follow this quick plan to reduce stress, avoid missed connections, and keep your documents ready.
-            </p>
-
-            <div class="steps">
-              <div class="step">
-                <div class="step-num">1</div>
-                <div class="step-body">
-                  <div class="step-title">Check your next gate and terminal immediately</div>
-                  <div class="step-text">Use airport screens or the airline app. Confirm gate changes every 30–45 minutes.</div>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-num">2</div>
-                <div class="step-body">
-                  <div class="step-title">Confirm if you need passport control / security transfer</div>
-                  <div class="step-text">International connections may require immigration and re-screening depending on terminals.</div>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-num">3</div>
-                <div class="step-body">
-                  <div class="step-title">Plan your buffer time</div>
-                  <div class="step-text">Aim to be near the next gate at least 60–90 minutes before boarding.</div>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-num">4</div>
-                <div class="step-body">
-                  <div class="step-title">Refill water + light meal</div>
-                  <div class="step-text">Hydration helps. Avoid heavy meals if you’re prone to jet lag or nausea.</div>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-num">5</div>
-                <div class="step-body">
-                  <div class="step-title">Charge devices + download offline docs</div>
-                  <div class="step-text">Boarding passes, passport scans, hotel details, contact list—save offline.</div>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-num">6</div>
-                <div class="step-body">
-                  <div class="step-title">Rest smart</div>
-                  <div class="step-text">If you nap, set an alarm and keep valuables secured. Consider a lounge day-pass if needed.</div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- RIGHT COLUMN -->
-        <div class="col">
-          <!-- DOCUMENTS CHECKLIST -->
-          <section class="card">
-            <div class="row space">
-              <h2 class="h2">Important Documents</h2>
-              <button id="resetDocs" class="btn btn-ghost" type="button">Reset</button>
-            </div>
-            <p class="muted">Tick what you’ve prepared. Saved automatically in your browser.</p>
-
-            <div id="docsList" class="checklist"></div>
-
-            <div class="divider"></div>
-
-            <div class="row space">
-              <div class="muted small">Tip: Keep originals on you, copies in your carry-on, and digital copies offline.</div>
-              <button id="markAllDocs" class="btn btn-primary" type="button">Mark All</button>
-            </div>
-          </section>
-
-          <!-- IN-APP REMINDERS FEED -->
-          <section class="card">
-            <div class="row space">
-              <h2 class="h2">In-App Reminders</h2>
-              <button id="clearReminders" class="btn btn-ghost" type="button">Clear</button>
-            </div>
-
-            <div class="muted small">
-              Reminders include:
-              <span class="tag">Pre-departure</span>
-              <span class="tag">Airport</span>
-              <span class="tag">Boarding</span>
-              <span class="tag">In-flight</span>
-              <span class="tag">Approach</span>
-              <span class="tag">Layover</span>
-              <span class="tag">Connection</span>
-              <span class="tag">Arrival prep</span>
-            </div>
-
-            <div class="divider"></div>
-
-            <div id="remindersFeed" class="feed"></div>
-          </section>
-
-          <!-- CONCIERGE INFO (Individual Contact) -->
-<section class="card">
-  <h2 class="h2">Concierge Information</h2>
-  <p class="muted">Your personal concierge contact for quick help during your trip.</p>
-
-  <div class="concierge">
-    <div class="concierge-card">
-      <div class="concierge-title">Primary Concierge</div>
-      <div class="concierge-text">
-        <strong>Name:</strong> Alex Morgan<br/>
-        <strong>Role:</strong> Travel Concierge (24/7 Support)<br/>
-        <strong>Phone/WhatsApp:</strong> +33 6 12 34 56 78<br/>
-        <strong>Email:</strong> alex.morgan.concierge@example.com<br/>
-        <strong>Location:</strong> Paris (CDG Support Desk)
-      </div>
-
-      <div class="row gap wrap" style="margin-top:10px;">
-        <button
-          class="btn btn-ghost"
-          type="button"
-          data-action="copy"
-          data-copy="Concierge: Alex Morgan | WhatsApp: +33 6 12 34 56 78 | Email: alex.morgan.concierge@example.com | Location: Paris (CDG Support Desk)"
-        >
-          Copy contact
-        </button>
-
-        <button
-          class="btn btn-ghost"
-          type="button"
-          data-action="toast"
-          data-toast="Concierge tip: Message Alex on WhatsApp with your flight number + current terminal if you need urgent guidance."
-        >
-          Quick tip
-        </button>
-      </div>
-    </div>
-
-    <div class="concierge-card">
-      <div class="concierge-title">What Your Concierge Can Help With</div>
-      <div class="concierge-text">
-        • Gate & terminal directions at CDG<br/>
-        • Lounge suggestions & airport facilities<br/>
-        • Rebooking guidance if delays happen<br/>
-        • Transport support on arrival (RDU)<br/>
-        • Lost baggage steps and support
-      </div>
-
-      <div class="row gap wrap" style="margin-top:10px;">
-        <button
-          class="btn btn-ghost"
-          type="button"
-          data-action="toast"
-          data-toast="If your gate changes: send Alex your new gate, your current location, and boarding time."
-        >
-          Gate change help
-        </button>
-
-        <button
-          class="btn btn-ghost"
-          type="button"
-          data-action="toast"
-          data-toast="If there’s a delay: ask Alex about rebooking options and what to do next before leaving the terminal."
-        >
-          Delay help
-        </button>
-      </div>
-    </div>
-
-    <div class="concierge-card">
-      <div class="concierge-title">Backup Contact</div>
-      <div class="concierge-text">
-        <strong>Name:</strong> Samira Diallo<br/>
-        <strong>Role:</strong> Backup Concierge (CDG Transfers)<br/>
-        <strong>Phone/WhatsApp:</strong> +33 7 98 76 54 32<br/>
-        <strong>Email:</strong> samira.diallo.concierge@example.com
-      </div>
-
-      <div class="row gap wrap" style="margin-top:10px;">
-        <button
-          class="btn btn-ghost"
-          type="button"
-          data-action="copy"
-          data-copy="Backup Concierge: Samira Diallo | WhatsApp: +33 7 98 76 54 32 | Email: samira.diallo.concierge@example.com"
-        >
-          Copy backup contact
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
-
-        </div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -322,4 +239,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
