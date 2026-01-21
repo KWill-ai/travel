@@ -1,3 +1,8 @@
+/* ===============================
+   Infinity Flight Companion - script.js
+   Responsive/adaptive JS behaviors + existing functionality preserved
+=============================== */
+
 const DEMO_USERNAME = "0123456789";
 const DEMO_PASSWORD = "Ggrwmmvw@1.2";
 
@@ -32,60 +37,43 @@ const clearRemindersBtn = document.getElementById("clearReminders");
 
 const toastEl = document.getElementById("toast");
 
-// ===== Side Nav Elements (NEW) =====
+// ===== Side Nav Elements =====
 const menuBtn = document.getElementById("menuBtn");
 const sideNav = document.getElementById("sideNav");
 const navOverlay = document.getElementById("navOverlay");
 const closeNavBtn = document.getElementById("closeNav");
 
-// ===== Views to toggle (NEW) =====
+// ===== Views to toggle =====
 const viewIds = ["welcomeCard", "flightCard", "layoverCard", "remindersCard", "documentsCard", "conciergeCard"];
 const views = viewIds.map((id) => document.getElementById(id)).filter(Boolean);
 
-// ===== Profile Picture Elements (kept once, no duplicates) =====
+// ===== Profile Picture Elements =====
 const profileAvatar = document.getElementById("profileAvatar");
 const profileInput = document.getElementById("profileInput");
 const avatarImage = document.getElementById("avatarImage");
 const avatarPlaceholder = document.getElementById("avatarPlaceholder");
-const SAVED_AVATAR_KEY = "ifc_profile_avatar";
 
 // --- Local Storage Keys ---
 const LS_SESSION = "fc_session_user";
 const LS_DOCS = "fc_docs_checklist";
 const LS_REMINDERS = "fc_reminders_feed";
+const SAVED_AVATAR_KEY = "ifc_profile_avatar";
+
+// --- Adaptive State ---
+let isNavOpen = false;
+let lastFocusedEl = null;
+let focusableInNav = [];
+let navTrapHandler = null;
+let resizeTimer = null;
 
 // ===============================
 // FLIGHT PLAN (Updated to 20/02/2026)
 // ===============================
 const flightPlan = [
-  {
-    dayLabel: "Fri, Feb 20",
-    timeLabel: "11:30 PM GMT+3",
-    route: "NBO → CDG",
-    flight: "AF 815 (Air France)",
-    details: "Depart Nairobi (NBO)",
-  },
-  {
-    dayLabel: "Sat, Feb 21",
-    timeLabel: "6:40 AM GMT+1",
-    route: "Arrive Paris (CDG)",
-    flight: "",
-    details: "Layover: 7 hr 10 min in CDG",
-  },
-  {
-    dayLabel: "Sat, Feb 21",
-    timeLabel: "1:50 PM GMT+1",
-    route: "CDG → RDU",
-    flight: "AF 692 (Air France)",
-    details: "Depart Paris (CDG)",
-  },
-  {
-    dayLabel: "Sat, Feb 21",
-    timeLabel: "4:45 PM EST",
-    route: "Arrive Raleigh/Durham (RDU)",
-    flight: "",
-    details: "Arrival",
-  },
+  { dayLabel: "Fri, Feb 20", timeLabel: "11:30 PM GMT+3", route: "NBO → CDG", flight: "AF 815 (Air France)", details: "Depart Nairobi (NBO)" },
+  { dayLabel: "Sat, Feb 21", timeLabel: "6:40 AM GMT+1", route: "Arrive Paris (CDG)", flight: "", details: "Layover: 7 hr 10 min in CDG" },
+  { dayLabel: "Sat, Feb 21", timeLabel: "1:50 PM GMT+1", route: "CDG → RDU", flight: "AF 692 (Air France)", details: "Depart Paris (CDG)" },
+  { dayLabel: "Sat, Feb 21", timeLabel: "4:45 PM EST", route: "Arrive Raleigh/Durham (RDU)", flight: "", details: "Arrival" }
 ];
 
 const defaultDocs = [
@@ -98,14 +86,14 @@ const defaultDocs = [
   { id: "payment", title: "Payment cards + some cash", sub: "Carry in separate places as backup." },
   { id: "meds", title: "Medication + prescriptions", sub: "Keep in carry-on. Bring prescription proof if needed." },
   { id: "vaccines", title: "Vaccination card / health docs (if required)", sub: "Depends on route & regulations." },
-  { id: "power", title: "Power bank + adapters", sub: "Keep charged; confirm airline carry rules." },
+  { id: "power", title: "Power bank + adapters", sub: "Keep charged; confirm airline carry rules." }
 ];
 
 // ===============================
 // REMINDERS ENGINE (REAL TIMELINE)
 // ===============================
 let reminderTimers = [];
-let scheduledReminders = []; // { atMs, title, text }
+let scheduledReminders = [];
 let tickerTimer = null;
 
 // --- Utilities ---
@@ -114,9 +102,7 @@ function showToast(message, ms = 3500) {
   toastEl.textContent = message;
   toastEl.classList.remove("hidden");
   window.clearTimeout(showToast._t);
-  showToast._t = window.setTimeout(() => {
-    toastEl.classList.add("hidden");
-  }, ms);
+  showToast._t = window.setTimeout(() => toastEl.classList.add("hidden"), ms);
 }
 
 function setLoginError(msg) {
@@ -160,7 +146,7 @@ function formatDateTimeLocal(ms) {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit",
+    minute: "2-digit"
   });
 }
 
@@ -170,7 +156,7 @@ function pushReminderToFeed(item) {
     id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
     time: formatNowTime(),
     title: item.title,
-    text: item.text,
+    text: item.text
   };
   feed.unshift(entry);
   localStorage.setItem(LS_REMINDERS, JSON.stringify(feed));
@@ -194,11 +180,7 @@ function clearRemindersFeed() {
 function notifyUser(title, body) {
   showToast(`${title}: ${body}`, 5000);
   if (window.Notification && Notification.permission === "granted") {
-    try {
-      new Notification(title, { body });
-    } catch {
-      // ignore
-    }
+    try { new Notification(title, { body }); } catch { /* ignore */ }
   }
 }
 
@@ -208,7 +190,7 @@ function escapeHtml(s) {
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#039;",
+    "'": "&#039;"
   }[m]));
 }
 
@@ -219,24 +201,16 @@ function toUtcMsFromOffset(dateISO, time24, offsetMinutes) {
   return localAsUTC - offsetMinutes * 60 * 1000;
 }
 
-function addMinutes(ms, minutes) {
-  return ms + minutes * 60 * 1000;
-}
-
-function addHours(ms, hours) {
-  return ms + hours * 60 * 60 * 1000;
-}
-
-function midpointMs(a, b) {
-  return Math.floor((a + b) / 2);
-}
+function addMinutes(ms, minutes) { return ms + minutes * 60 * 1000; }
+function addHours(ms, hours) { return ms + hours * 60 * 60 * 1000; }
+function midpointMs(a, b) { return Math.floor((a + b) / 2); }
 
 // --- Flight key timestamps ---
 function getTripTimestamps() {
-  const departNBO = toUtcMsFromOffset("2026-02-20", "23:30", +180); // GMT+3
-  const arriveCDG = toUtcMsFromOffset("2026-02-21", "06:40", +60); // GMT+1
-  const departCDG = toUtcMsFromOffset("2026-02-21", "13:50", +60); // GMT+1
-  const arriveRDU = toUtcMsFromOffset("2026-02-21", "16:45", -300); // EST (GMT-5)
+  const departNBO = toUtcMsFromOffset("2026-02-20", "23:30", +180);
+  const arriveCDG = toUtcMsFromOffset("2026-02-21", "06:40", +60);
+  const departCDG = toUtcMsFromOffset("2026-02-21", "13:50", +60);
+  const arriveRDU = toUtcMsFromOffset("2026-02-21", "16:45", -300);
   return { departNBO, arriveCDG, departCDG, arriveRDU };
 }
 
@@ -244,51 +218,15 @@ function buildRealSchedule() {
   const { departNBO, arriveCDG, departCDG, arriveRDU } = getTripTimestamps();
 
   const schedule = [
-    {
-      atMs: addHours(departNBO, -3),
-      title: "Pre-departure (3 hours to go)",
-      text: "Confirm passport, boarding pass, baggage limits, and that your essentials are in your carry-on.",
-    },
-    {
-      atMs: addMinutes(departNBO, -90),
-      title: "Head to gate / check-in check",
-      text: "If you haven’t checked in, do it now. Confirm gate for AF 815 (NBO → CDG).",
-    },
-    {
-      atMs: addMinutes(departNBO, -30),
-      title: "Boarding soon",
-      text: "Stay near the gate. Keep passport + boarding pass in hand. Charge phone if needed.",
-    },
-    {
-      atMs: midpointMs(departNBO, arriveCDG),
-      title: "In-flight check",
-      text: "Hydrate, stretch when safe, and keep valuables secured. Prepare for CDG connection steps.",
-    },
-    {
-      atMs: addMinutes(arriveCDG, -20),
-      title: "Approaching CDG",
-      text: "On arrival: check terminal + gate for AF 692. Confirm whether you must pass immigration/security.",
-    },
-    {
-      atMs: addMinutes(arriveCDG, +25),
-      title: "Layover plan (CDG)",
-      text: "Check next gate first, then water + light meal. Charge devices and be near the next gate 60–90 min before boarding.",
-    },
-    {
-      atMs: addMinutes(departCDG, -45),
-      title: "Connection boarding soon",
-      text: "Re-check screens for gate changes. Get to the gate area early for CDG → RDU.",
-    },
-    {
-      atMs: midpointMs(departCDG, arriveRDU),
-      title: "Second flight in-progress",
-      text: "Rest and hydrate. Keep any arrival forms ready (address, contact info, customs).",
-    },
-    {
-      atMs: addMinutes(arriveRDU, -30),
-      title: "Arrival prep (RDU)",
-      text: "Prepare for immigration/customs, then confirm baggage claim belt and ground transport.",
-    },
+    { atMs: addHours(departNBO, -3), title: "Pre-departure (3 hours to go)", text: "Confirm passport, boarding pass, baggage limits, and that your essentials are in your carry-on." },
+    { atMs: addMinutes(departNBO, -90), title: "Head to gate / check-in check", text: "If you haven’t checked in, do it now. Confirm gate for AF 815 (NBO → CDG)." },
+    { atMs: addMinutes(departNBO, -30), title: "Boarding soon", text: "Stay near the gate. Keep passport + boarding pass in hand. Charge phone if needed." },
+    { atMs: midpointMs(departNBO, arriveCDG), title: "In-flight check", text: "Hydrate, stretch when safe, and keep valuables secured. Prepare for CDG connection steps." },
+    { atMs: addMinutes(arriveCDG, -20), title: "Approaching CDG", text: "On arrival: check terminal + gate for AF 692. Confirm whether you must pass immigration/security." },
+    { atMs: addMinutes(arriveCDG, +25), title: "Layover plan (CDG)", text: "Check next gate first, then water + light meal. Charge devices and be near the next gate 60–90 min before boarding." },
+    { atMs: addMinutes(departCDG, -45), title: "Connection boarding soon", text: "Re-check screens for gate changes. Get to the gate area early for CDG → RDU." },
+    { atMs: midpointMs(departCDG, arriveRDU), title: "Second flight in-progress", text: "Rest and hydrate. Keep any arrival forms ready (address, contact info, customs)." },
+    { atMs: addMinutes(arriveRDU, -30), title: "Arrival prep (RDU)", text: "Prepare for immigration/customs, then confirm baggage claim belt and ground transport." }
   ];
 
   schedule.sort((a, b) => a.atMs - b.atMs);
@@ -310,8 +248,8 @@ function renderFlightPlan() {
   flightPlan.forEach((item, idx) => {
     const el = document.createElement("div");
     el.className = "t-item";
-
     const flightLine = item.flight ? `<div class="tag">${escapeHtml(item.flight)}</div>` : "";
+
     el.innerHTML = `
       <div class="t-top">
         <div>
@@ -321,10 +259,9 @@ function renderFlightPlan() {
         </div>
         <div class="t-meta">Stop ${idx + 1}/${flightPlan.length}</div>
       </div>
-      <div class="t-badges">
-        ${flightLine}
-      </div>
+      <div class="t-badges">${flightLine}</div>
     `;
+
     flightPlanEl.appendChild(el);
   });
 }
@@ -381,9 +318,7 @@ function resetDocs() {
 
 function markAllDocs() {
   const all = {};
-  defaultDocs.forEach((d) => {
-    all[d.id] = true;
-  });
+  defaultDocs.forEach((d) => (all[d.id] = true));
   saveDocsState(all);
   renderDocsChecklist();
   showToast("All documents marked.");
@@ -418,7 +353,7 @@ function renderRemindersFeed() {
   });
 }
 
-// --- Reminders engine (real schedule) ---
+// --- Reminders engine ---
 function stopReminders() {
   reminderTimers.forEach((t) => clearTimeout(t));
   reminderTimers = [];
@@ -456,8 +391,7 @@ function startReminders() {
   upcoming.forEach((rem) => {
     const delay = rem.atMs - now;
     const timer = setTimeout(() => {
-      const payload = { title: rem.title, text: rem.text };
-      pushReminderToFeed(payload);
+      pushReminderToFeed({ title: rem.title, text: rem.text });
       notifyUser(rem.title, rem.text);
 
       if (nextReminderEl) nextReminderEl.textContent = computeNextReminderText();
@@ -536,48 +470,131 @@ function buildPlanText() {
     "",
     "Sat, Feb 21, 2026",
     "4:45 PM EST",
-    "Arrive Raleigh/Durham (RDU)",
+    "Arrive Raleigh/Durham (RDU)"
   ].join("\n");
 }
 
-// --- Simple “concierge” buttons handler (copy/toast) ---
+// --- Simple “concierge” buttons handler ---
 function bindConciergeActions() {
   document.querySelectorAll("[data-action]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const action = btn.getAttribute("data-action");
-      if (action === "toast") {
-        showToast(btn.getAttribute("data-toast") || "Done.");
-      }
-      if (action === "copy") {
-        await copyText(btn.getAttribute("data-copy") || "");
-      }
+      if (action === "toast") showToast(btn.getAttribute("data-toast") || "Done.");
+      if (action === "copy") await copyText(btn.getAttribute("data-copy") || "");
     });
   });
 }
 
-/* ========= Side Nav (NEW) ========= */
+/* ==========================================================
+   Responsive/Adaptive Side Nav behaviors
+========================================================== */
+function getFocusableElements(container) {
+  if (!container) return [];
+  const selectors = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ];
+  return Array.from(container.querySelectorAll(selectors.join(","))).filter((el) => {
+    const style = window.getComputedStyle(el);
+    return style.display !== "none" && style.visibility !== "hidden";
+  });
+}
+
+function lockBodyScroll(lock) {
+  // prevents background scrolling behind drawer on mobile
+  if (lock) {
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+  } else {
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    document.body.style.touchAction = "";
+  }
+}
+
 function openSideNav() {
   if (!sideNav || !navOverlay || !menuBtn) return;
+  if (isNavOpen) return;
+
+  isNavOpen = true;
+  lastFocusedEl = document.activeElement;
+
   sideNav.classList.remove("hidden");
   navOverlay.classList.remove("hidden");
+
   menuBtn.setAttribute("aria-expanded", "true");
+  sideNav.setAttribute("aria-hidden", "false");
+  navOverlay.setAttribute("aria-hidden", "false");
+
+  lockBodyScroll(true);
+
+  focusableInNav = getFocusableElements(sideNav);
+  const first = focusableInNav[0] || closeNavBtn || sideNav;
+  if (first && typeof first.focus === "function") first.focus();
+
+  // Focus trap
+  navTrapHandler = (e) => {
+    if (!isNavOpen) return;
+    if (e.key !== "Tab") return;
+
+    focusableInNav = getFocusableElements(sideNav);
+    if (focusableInNav.length === 0) return;
+
+    const firstEl = focusableInNav[0];
+    const lastEl = focusableInNav[focusableInNav.length - 1];
+
+    if (e.shiftKey && document.activeElement === firstEl) {
+      e.preventDefault();
+      lastEl.focus();
+    } else if (!e.shiftKey && document.activeElement === lastEl) {
+      e.preventDefault();
+      firstEl.focus();
+    }
+  };
+
+  document.addEventListener("keydown", navTrapHandler, true);
 }
 
 function closeSideNav() {
   if (!sideNav || !navOverlay || !menuBtn) return;
+  if (!isNavOpen) return;
+
+  isNavOpen = false;
+
   sideNav.classList.add("hidden");
   navOverlay.classList.add("hidden");
+
   menuBtn.setAttribute("aria-expanded", "false");
+  sideNav.setAttribute("aria-hidden", "true");
+  navOverlay.setAttribute("aria-hidden", "true");
+
+  lockBodyScroll(false);
+
+  if (navTrapHandler) {
+    document.removeEventListener("keydown", navTrapHandler, true);
+    navTrapHandler = null;
+  }
+
+  if (lastFocusedEl && typeof lastFocusedEl.focus === "function") {
+    lastFocusedEl.focus();
+  }
 }
 
 function setActiveLink(targetId) {
   document.querySelectorAll(".side-link").forEach((btn) => {
     const isActive = btn.getAttribute("data-view") === targetId;
     btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-current", isActive ? "page" : "false");
   });
 }
 
 function showView(targetId, scroll = true) {
+  // toggle sections
   views.forEach((v) => {
     if (v.id === targetId) v.classList.remove("hidden");
     else v.classList.add("hidden");
@@ -585,9 +602,13 @@ function showView(targetId, scroll = true) {
 
   setActiveLink(targetId);
 
+  // smooth scroll for long pages; on small screens jump a bit earlier
   if (scroll) {
     const el = document.getElementById(targetId);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (el) {
+      const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "start" });
+    }
   }
 }
 
@@ -604,7 +625,54 @@ function hideAppNav() {
   closeSideNav();
 }
 
-/* ========= Profile Picture (NEW, cleaned) ========= */
+function bindSideNav() {
+  if (!menuBtn || !sideNav || !navOverlay) return;
+
+  // accessibility attrs
+  menuBtn.setAttribute("aria-expanded", "false");
+  menuBtn.setAttribute("aria-controls", "sideNav");
+  sideNav.setAttribute("aria-hidden", "true");
+  navOverlay.setAttribute("aria-hidden", "true");
+
+  menuBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openSideNav();
+  });
+
+  if (closeNavBtn) closeNavBtn.addEventListener("click", closeSideNav);
+  navOverlay.addEventListener("click", closeSideNav);
+
+  // close on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSideNav();
+  });
+
+  // event delegation for nav buttons (more stable on mobile)
+  sideNav.addEventListener("click", (e) => {
+    const btn = e.target.closest(".side-link");
+    if (!btn) return;
+    const target = btn.getAttribute("data-view");
+    if (target) showView(target);
+    closeSideNav();
+  });
+
+  // adaptive: when screen changes (rotate/resize), close drawer to avoid weird states
+  window.addEventListener("resize", () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      if (isNavOpen) closeSideNav();
+    }, 150);
+  });
+
+  window.addEventListener("orientationchange", () => {
+    if (isNavOpen) closeSideNav();
+  });
+}
+
+/* ==========================================================
+   Profile Picture (Upload + Persist)
+========================================================== */
 function loadSavedAvatar() {
   try {
     const savedAvatar = localStorage.getItem(SAVED_AVATAR_KEY);
@@ -613,21 +681,19 @@ function loadSavedAvatar() {
       avatarImage.classList.remove("hidden");
       avatarPlaceholder.classList.add("hidden");
     }
-  } catch {
-    // ignore
-  }
+  } catch { /* ignore */ }
 }
 
 function saveAvatar(dataUrl) {
-  try {
-    localStorage.setItem(SAVED_AVATAR_KEY, dataUrl);
-  } catch {
-    // ignore
-  }
+  try { localStorage.setItem(SAVED_AVATAR_KEY, dataUrl); } catch { /* ignore */ }
 }
 
 function setupProfileAvatar() {
   if (!profileAvatar || !profileInput) return;
+
+  // ensure we don't stack listeners if showApp runs again
+  if (profileAvatar._bound) return;
+  profileAvatar._bound = true;
 
   profileAvatar.addEventListener("click", () => profileInput.click());
 
@@ -660,7 +726,9 @@ function setupProfileAvatar() {
   loadSavedAvatar();
 }
 
-/* ========= View switch ========= */
+/* ==========================================================
+   View switch (Login/App)
+========================================================== */
 function showApp(username) {
   if (loginView) loginView.classList.add("hidden");
   if (appView) appView.classList.remove("hidden");
@@ -693,91 +761,88 @@ function showLogin() {
   setLoginError("");
 }
 
-/* ========= Bind side nav events (NEW) ========= */
-function bindSideNav() {
-  if (menuBtn) {
-    menuBtn.addEventListener("click", (e) => {
+/* ==========================================================
+   Bind main app actions
+========================================================== */
+function bindActions() {
+  if (loginForm && !loginForm._bound) {
+    loginForm._bound = true;
+    loginForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      openSideNav();
+      setLoginError("");
+
+      const u = (loginUsername?.value || "").trim();
+      const p = (loginPassword?.value || "").trim();
+
+      if (u === DEMO_USERNAME && p === DEMO_PASSWORD) {
+        saveSessionUser(u);
+        showApp(u);
+        showToast("Welcome! Your flight plan is ready.");
+      } else {
+        setLoginError("Invalid username or password. Try the demo credentials.");
+      }
     });
   }
 
-  if (closeNavBtn) closeNavBtn.addEventListener("click", closeSideNav);
-  if (navOverlay) navOverlay.addEventListener("click", closeSideNav);
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeSideNav();
-  });
-
-  document.querySelectorAll(".side-link").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.getAttribute("data-view");
-      if (target) showView(target);
-      closeSideNav();
+  if (fillDemo && !fillDemo._bound) {
+    fillDemo._bound = true;
+    fillDemo.addEventListener("click", () => {
+      if (loginUsername) loginUsername.value = DEMO_USERNAME;
+      if (loginPassword) loginPassword.value = DEMO_PASSWORD;
+      showToast("Demo credentials filled.");
     });
-  });
+  }
+
+  if (logoutBtn && !logoutBtn._bound) {
+    logoutBtn._bound = true;
+    logoutBtn.addEventListener("click", () => {
+      clearSessionUser();
+      showLogin();
+      showToast("Logged out.");
+    });
+  }
+
+  if (enableNotifsBtn && !enableNotifsBtn._bound) {
+    enableNotifsBtn._bound = true;
+    enableNotifsBtn.addEventListener("click", enableNotifications);
+  }
+
+  if (startRemindersBtn && !startRemindersBtn._bound) {
+    startRemindersBtn._bound = true;
+    startRemindersBtn.addEventListener("click", startReminders);
+  }
+
+  if (copyPlanBtn && !copyPlanBtn._bound) {
+    copyPlanBtn._bound = true;
+    copyPlanBtn.addEventListener("click", async () => copyText(buildPlanText()));
+  }
+
+  if (resetDocsBtn && !resetDocsBtn._bound) {
+    resetDocsBtn._bound = true;
+    resetDocsBtn.addEventListener("click", resetDocs);
+  }
+
+  if (markAllDocsBtn && !markAllDocsBtn._bound) {
+    markAllDocsBtn._bound = true;
+    markAllDocsBtn.addEventListener("click", markAllDocs);
+  }
+
+  if (clearRemindersBtn && !clearRemindersBtn._bound) {
+    clearRemindersBtn._bound = true;
+    clearRemindersBtn.addEventListener("click", () => {
+      clearRemindersFeed();
+      showToast("Reminders cleared.");
+    });
+  }
 }
 
-/* ========= Login logic ========= */
-if (loginForm) {
-  loginForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    setLoginError("");
-
-    const u = (loginUsername?.value || "").trim();
-    const p = (loginPassword?.value || "").trim();
-
-    if (u === DEMO_USERNAME && p === DEMO_PASSWORD) {
-      saveSessionUser(u);
-      showApp(u);
-      showToast("Welcome! Your flight plan is ready.");
-    } else {
-      setLoginError("Invalid username or password. Try the demo credentials.");
-    }
-  });
-}
-
-if (fillDemo) {
-  fillDemo.addEventListener("click", () => {
-    if (loginUsername) loginUsername.value = DEMO_USERNAME;
-    if (loginPassword) loginPassword.value = DEMO_PASSWORD;
-    showToast("Demo credentials filled.");
-  });
-}
-
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
-    clearSessionUser();
-    showLogin();
-    showToast("Logged out.");
-  });
-}
-
-// --- Buttons ---
-if (enableNotifsBtn) enableNotifsBtn.addEventListener("click", enableNotifications);
-if (startRemindersBtn) startRemindersBtn.addEventListener("click", startReminders);
-
-if (copyPlanBtn) {
-  copyPlanBtn.addEventListener("click", async () => {
-    await copyText(buildPlanText());
-  });
-}
-
-if (resetDocsBtn) resetDocsBtn.addEventListener("click", resetDocs);
-if (markAllDocsBtn) markAllDocsBtn.addEventListener("click", markAllDocs);
-
-if (clearRemindersBtn) {
-  clearRemindersBtn.addEventListener("click", () => {
-    clearRemindersFeed();
-    showToast("Reminders cleared.");
-  });
-}
-
-/* ========= Init ========= */
+/* ==========================================================
+   Init
+========================================================== */
 (function init() {
   bindSideNav();
-  setupProfileAvatar(); // so avatar loads even on login screen if visible
+  bindActions();
+  setupProfileAvatar(); // loads saved avatar when possible
 
   const session = getSessionUser();
   if (session && session.username) {
