@@ -446,3 +446,272 @@ body{
   font-size: 12px;
   color: rgba(0,0,0,0.65);
 }
+/* ===============================
+   RESPONSIVE + ADAPTIVE CSS (drop-in)
+   Keeps your current look, improves mobile/tablet behavior
+=============================== */
+
+/* --- Base improvements for all devices --- */
+:root{
+  /* keep your existing variables */
+  --container-max: 980px;
+  --container-pad: clamp(14px, 3vw, 18px);
+  --card-pad: clamp(14px, 3vw, 18px);
+  --tap: 44px; /* minimum touch target */
+}
+
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
+img, svg, video, canvas{
+  max-width:100%;
+  height:auto;
+}
+
+button, input, select, textarea{
+  font: inherit;
+}
+
+body{
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* Smooth but respect reduce-motion */
+@media (prefers-reduced-motion: reduce){
+  *{ scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+/* --- Container becomes fluid --- */
+.container{
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 22px var(--container-pad) 34px;
+}
+
+/* --- Topbar: wraps nicely on small screens --- */
+.topbar{
+  padding: 12px var(--container-pad);
+  gap: 12px;
+}
+
+.brand{
+  min-width: 0;
+  gap: 10px;
+}
+
+.brand-title{
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-sub{
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46vw;
+}
+
+/* Right side stays usable */
+.topbar-right{
+  gap: 8px;
+}
+
+.menu-btn,
+.profile-avatar{
+  width: var(--tap);
+  height: var(--tap);
+}
+
+/* Badges shouldn’t overflow */
+.user-badge{
+  max-width: 42vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* --- Cards: fluid padding + spacing --- */
+.card{
+  padding: var(--card-pad);
+}
+
+/* Long text should wrap */
+.t-title,
+.feed-title,
+.check-title,
+.step-title,
+.concierge-title{
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* --- Rows and controls stack on narrow screens --- */
+.row.space{
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.row.gap{
+  flex-wrap: wrap;
+}
+
+.btn{
+  min-height: var(--tap);
+}
+
+.input{
+  min-height: var(--tap);
+}
+
+/* Make button rows wrap + full width on small */
+.row.space .btn,
+.row.gap .btn{
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px){
+  /* stack row contents */
+  .row.space{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .row.gap{
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  /* full-width buttons */
+  .btn{
+    width: 100%;
+  }
+
+  /* form controls full width */
+  .input{
+    width: 100%;
+  }
+
+  /* keep cards comfortable on small screens */
+  .h1{ font-size: 22px; }
+  .h2{ font-size: 16px; }
+}
+
+/* --- Timeline / Step / Checklist blocks: better mobile layout --- */
+.t-top{
+  display:flex;
+  justify-content:space-between;
+  gap: 12px;
+  align-items:flex-start;
+}
+
+@media (max-width: 540px){
+  .t-top{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .t-meta{
+    text-align: left;
+  }
+
+  .step{
+    flex-direction: column;
+  }
+
+  .step-num{
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .check{
+    align-items: flex-start;
+  }
+}
+
+/* --- Feed: max height adapts to screen --- */
+.feed{
+  max-height: min(360px, 45vh);
+}
+
+/* --- Toast: doesn’t cover too much on mobile --- */
+.toast{
+  right: var(--container-pad);
+  bottom: var(--container-pad);
+  max-width: min(420px, calc(100vw - (var(--container-pad) * 2)));
+}
+
+/* --- Side nav: responsive drawer widths --- */
+.side-nav{
+  width: min(86vw, 320px);
+  padding: 14px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure hidden state stays off-screen */
+.side-nav.hidden{
+  display:block !important;
+  transform: translateX(-110%);
+}
+
+/* Better tap targets for nav */
+.side-link{
+  min-height: var(--tap);
+  padding: 12px 12px;
+}
+
+/* --- Overlay improves click feel on mobile --- */
+.nav-overlay{
+  touch-action: manipulation;
+}
+
+/* --- Optional: improve layout if you ever use multi-columns later --- */
+.content-shell{
+  display:flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* --- Tablet refinements --- */
+@media (max-width: 1100px){
+  :root{
+    --container-max: 980px;
+  }
+}
+
+/* --- Small phones --- */
+@media (max-width: 420px){
+  .logo{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .menu-btn,
+  .profile-avatar{
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .user-badge{
+    padding: 7px 10px;
+  }
+}
+
+/* --- Large screens: slightly nicer spacing --- */
+@media (min-width: 1200px){
+  :root{
+    --container-max: 1040px;
+  }
+}
+
+
