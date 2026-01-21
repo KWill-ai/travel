@@ -1,8 +1,3 @@
-/* ===============================
-   Infinity Flight Companion - script.js
-   Responsive/adaptive JS behaviors + existing functionality preserved
-=============================== */
-
 const DEMO_USERNAME = "0123456789";
 const DEMO_PASSWORD = "Ggrwmmvw@1.2";
 
@@ -37,23 +32,20 @@ const clearRemindersBtn = document.getElementById("clearReminders");
 
 const toastEl = document.getElementById("toast");
 
-// ===== Side Nav Elements =====
 const menuBtn = document.getElementById("menuBtn");
 const sideNav = document.getElementById("sideNav");
 const navOverlay = document.getElementById("navOverlay");
 const closeNavBtn = document.getElementById("closeNav");
 
-// ===== Views to toggle =====
 const viewIds = ["welcomeCard", "flightCard", "layoverCard", "remindersCard", "documentsCard", "conciergeCard"];
 const views = viewIds.map((id) => document.getElementById(id)).filter(Boolean);
 
-// ===== Profile Picture Elements =====
 const profileAvatar = document.getElementById("profileAvatar");
 const profileInput = document.getElementById("profileInput");
 const avatarImage = document.getElementById("avatarImage");
 const avatarPlaceholder = document.getElementById("avatarPlaceholder");
 
-// --- Local Storage Keys ---
+
 const LS_SESSION = "fc_session_user";
 const LS_DOCS = "fc_docs_checklist";
 const LS_REMINDERS = "fc_reminders_feed";
@@ -66,9 +58,6 @@ let focusableInNav = [];
 let navTrapHandler = null;
 let resizeTimer = null;
 
-// ===============================
-// FLIGHT PLAN (Updated to 20/02/2026)
-// ===============================
 const flightPlan = [
   { dayLabel: "Fri, Feb 20", timeLabel: "11:30 PM GMT+3", route: "NBO → CDG", flight: "AF 815 (Air France)", details: "Depart Nairobi (NBO)" },
   { dayLabel: "Sat, Feb 21", timeLabel: "6:40 AM GMT+1", route: "Arrive Paris (CDG)", flight: "", details: "Layover: 7 hr 10 min in CDG" },
@@ -89,14 +78,11 @@ const defaultDocs = [
   { id: "power", title: "Power bank + adapters", sub: "Keep charged; confirm airline carry rules." }
 ];
 
-// ===============================
-// REMINDERS ENGINE (REAL TIMELINE)
-// ===============================
+
 let reminderTimers = [];
 let scheduledReminders = [];
 let tickerTimer = null;
 
-// --- Utilities ---
 function showToast(message, ms = 3500) {
   if (!toastEl) return;
   toastEl.textContent = message;
@@ -205,7 +191,7 @@ function addMinutes(ms, minutes) { return ms + minutes * 60 * 1000; }
 function addHours(ms, hours) { return ms + hours * 60 * 60 * 1000; }
 function midpointMs(a, b) { return Math.floor((a + b) / 2); }
 
-// --- Flight key timestamps ---
+
 function getTripTimestamps() {
   const departNBO = toUtcMsFromOffset("2026-02-20", "23:30", +180);
   const arriveCDG = toUtcMsFromOffset("2026-02-21", "06:40", +60);
@@ -240,7 +226,7 @@ function computeNextReminderText() {
   return `${formatDateTimeLocal(next.atMs)} — ${next.title}`;
 }
 
-// --- Flight plan rendering ---
+
 function renderFlightPlan() {
   if (!flightPlanEl) return;
   flightPlanEl.innerHTML = "";
@@ -851,3 +837,4 @@ function bindActions() {
     showLogin();
   }
 })();
+
