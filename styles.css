@@ -490,35 +490,101 @@ body{
   padding: 22px var(--container-pad) 34px;
 }
 
-/* --- Topbar: wraps nicely on small screens --- */
+/* ===============================
+   TOP NAV CLEAN + NOT CLUSTERED
+   (Add this AFTER your current CSS)
+=============================== */
+
+/* Keep header clean: 3 zones (left brand | spacer | right actions) */
 .topbar{
-  padding: 12px var(--container-pad);
+  display:grid !important;
+  grid-template-columns: 1fr auto;
+  align-items:center;
   gap: 12px;
 }
 
+/* Brand area: allow it to shrink nicely without pushing right side */
 .brand{
   min-width: 0;
-  gap: 10px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
 }
 
+/* Text block inside brand (title + subtitle) */
+.brand > div{
+  min-width: 0;
+}
+
+/* Prevent the subtitle from taking too much room */
 .brand-title{
   font-size: 14px;
+  line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 52vw;
 }
 
 .brand-sub{
   font-size: 12px;
+  line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 46vw;
+  max-width: 52vw;
 }
 
-/* Right side stays usable */
+/* Right side: keep everything aligned and not wrapping messily */
 .topbar-right{
-  gap: 8px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Make the badge compact and not wide */
+.user-badge{
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Only show subtitle on larger screens (prevents clutter) */
+@media (max-width: 720px){
+  .brand-sub{
+    display:none;
+  }
+
+  /* slightly tighter paddings */
+  .topbar{
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  /* keep brand text shorter on phones */
+  .brand-title{
+    max-width: 56vw;
+  }
+
+  /* if still tight, hide badge first (not logo/title) */
+  .user-badge{
+    display:none;
+  }
+}
+
+/* Very small screens: keep only essentials visible */
+@media (max-width: 420px){
+  .brand-title{
+    max-width: 54vw;
+  }
+
+  /* keep logout from overcrowding */
+  #logoutBtn{
+    padding: 10px 10px;
+  }
 }
 
 .menu-btn,
@@ -550,7 +616,6 @@ body{
   word-break: break-word;
 }
 
-/* --- Rows and controls stack on narrow screens --- */
 .row.space{
   flex-wrap: wrap;
   align-items: center;
@@ -568,7 +633,6 @@ body{
   min-height: var(--tap);
 }
 
-/* Make button rows wrap + full width on small */
 .row.space .btn,
 .row.gap .btn{
   flex: 0 0 auto;
@@ -593,7 +657,6 @@ body{
     width: 100%;
   }
 
-  /* form controls full width */
   .input{
     width: 100%;
   }
@@ -603,7 +666,6 @@ body{
   .h2{ font-size: 16px; }
 }
 
-/* --- Timeline / Step / Checklist blocks: better mobile layout --- */
 .t-top{
   display:flex;
   justify-content:space-between;
@@ -636,19 +698,15 @@ body{
   }
 }
 
-/* --- Feed: max height adapts to screen --- */
 .feed{
   max-height: min(360px, 45vh);
 }
-
-/* --- Toast: doesn’t cover too much on mobile --- */
 .toast{
   right: var(--container-pad);
   bottom: var(--container-pad);
   max-width: min(420px, calc(100vw - (var(--container-pad) * 2)));
 }
 
-/* --- Side nav: responsive drawer widths --- */
 .side-nav{
   width: min(86vw, 320px);
   padding: 14px;
@@ -656,7 +714,6 @@ body{
   -webkit-overflow-scrolling: touch;
 }
 
-/* Ensure hidden state stays off-screen */
 .side-nav.hidden{
   display:block !important;
   transform: translateX(-110%);
@@ -668,7 +725,6 @@ body{
   padding: 12px 12px;
 }
 
-/* --- Overlay improves click feel on mobile --- */
 .nav-overlay{
   touch-action: manipulation;
 }
@@ -713,5 +769,6 @@ body{
     --container-max: 1040px;
   }
 }
+
 
 
