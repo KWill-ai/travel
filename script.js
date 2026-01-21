@@ -1,17 +1,6 @@
-/********************
- * Flight Companion Demo (Front-end only)
- * - Demo login
- * - Flight plan display (updated to 20/02/2026 trip)
- * - Documents checklist (localStorage)
- * - In-app reminders scheduled by real timestamps (multi-timezone)
- * - Optional browser notifications (if user enables)
- ********************/
-
-// --- Demo credentials (sample only) ---
 const DEMO_USERNAME = "0123456789";
 const DEMO_PASSWORD = "Ggrwmmvw@1.2";
 
-// --- DOM ---
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
 const loginForm = document.getElementById("loginForm");
@@ -43,6 +32,23 @@ const clearRemindersBtn = document.getElementById("clearReminders");
 
 const toastEl = document.getElementById("toast");
 
+// ===== Side Nav Elements (NEW) =====
+const menuBtn = document.getElementById("menuBtn");
+const sideNav = document.getElementById("sideNav");
+const navOverlay = document.getElementById("navOverlay");
+const closeNavBtn = document.getElementById("closeNav");
+
+// ===== Views to toggle (NEW) =====
+const viewIds = ["welcomeCard", "flightCard", "layoverCard", "remindersCard", "documentsCard", "conciergeCard"];
+const views = viewIds.map((id) => document.getElementById(id)).filter(Boolean);
+
+// ===== Profile Picture Elements (kept once, no duplicates) =====
+const profileAvatar = document.getElementById("profileAvatar");
+const profileInput = document.getElementById("profileInput");
+const avatarImage = document.getElementById("avatarImage");
+const avatarPlaceholder = document.getElementById("avatarPlaceholder");
+const SAVED_AVATAR_KEY = "ifc_profile_avatar";
+
 // --- Local Storage Keys ---
 const LS_SESSION = "fc_session_user";
 const LS_DOCS = "fc_docs_checklist";
@@ -51,42 +57,35 @@ const LS_REMINDERS = "fc_reminders_feed";
 // ===============================
 // FLIGHT PLAN (Updated to 20/02/2026)
 // ===============================
-//
-// Same times + timezones as your original plan, but shifted to:
-// Depart: Fri, Feb 20, 2026 11:30 PM (GMT+3) from NBO
-// Arrive: Sat, Feb 21, 2026 06:40 AM (GMT+1) at CDG
-// Depart: Sat, Feb 21, 2026 01:50 PM (GMT+1) CDG → RDU
-// Arrive: Sat, Feb 21, 2026 04:45 PM (EST, GMT-5) at RDU
-//
 const flightPlan = [
   {
     dayLabel: "Fri, Feb 20",
     timeLabel: "11:30 PM GMT+3",
     route: "NBO → CDG",
     flight: "AF 815 (Air France)",
-    details: "Depart Nairobi (NBO)"
+    details: "Depart Nairobi (NBO)",
   },
   {
     dayLabel: "Sat, Feb 21",
     timeLabel: "6:40 AM GMT+1",
     route: "Arrive Paris (CDG)",
     flight: "",
-    details: "Layover: 7 hr 10 min in CDG"
+    details: "Layover: 7 hr 10 min in CDG",
   },
   {
     dayLabel: "Sat, Feb 21",
     timeLabel: "1:50 PM GMT+1",
     route: "CDG → RDU",
     flight: "AF 692 (Air France)",
-    details: "Depart Paris (CDG)"
+    details: "Depart Paris (CDG)",
   },
   {
     dayLabel: "Sat, Feb 21",
     timeLabel: "4:45 PM EST",
     route: "Arrive Raleigh/Durham (RDU)",
     flight: "",
-    details: "Arrival"
-  }
+    details: "Arrival",
+  },
 ];
 
 const defaultDocs = [
@@ -99,7 +98,7 @@ const defaultDocs = [
   { id: "payment", title: "Payment cards + some cash", sub: "Carry in separate places as backup." },
   { id: "meds", title: "Medication + prescriptions", sub: "Keep in carry-on. Bring prescription proof if needed." },
   { id: "vaccines", title: "Vaccination card / health docs (if required)", sub: "Depends on route & regulations." },
-  { id: "power", title: "Power bank + adapters", sub: "Keep charged; confirm airline carry rules." }
+  { id: "power", title: "Power bank + adapters", sub: "Keep charged; confirm airline carry rules." },
 ];
 
 // ===============================
@@ -111,6 +110,7 @@ let tickerTimer = null;
 
 // --- Utilities ---
 function showToast(message, ms = 3500) {
+  if (!toastEl) return;
   toastEl.textContent = message;
   toastEl.classList.remove("hidden");
   window.clearTimeout(showToast._t);
@@ -120,6 +120,7 @@ function showToast(message, ms = 3500) {
 }
 
 function setLoginError(msg) {
+  if (!loginError) return;
   if (!msg) {
     loginError.classList.add("hidden");
     loginError.textContent = "";
@@ -153,14 +154,13 @@ function formatNowTime() {
 
 function formatDateTimeLocal(ms) {
   const d = new Date(ms);
-  // Shows in the user’s local machine timezone (fine for UI “next reminder”)
   return d.toLocaleString(undefined, {
     weekday: "short",
     year: "numeric",
     month: "short",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   });
 }
 
@@ -170,7 +170,7 @@ function pushReminderToFeed(item) {
     id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
     time: formatNowTime(),
     title: item.title,
-    text: item.text
+    text: item.text,
   };
   feed.unshift(entry);
   localStorage.setItem(LS_REMINDERS, JSON.stringify(feed));
@@ -193,7 +193,7 @@ function clearRemindersFeed() {
 
 function notifyUser(title, body) {
   showToast(`${title}: ${body}`, 5000);
-  if (Notification && Notification.permission === "granted") {
+  if (window.Notification && Notification.permission === "granted") {
     try {
       new Notification(title, { body });
     } catch {
@@ -208,21 +208,13 @@ function escapeHtml(s) {
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#039;"
+    "'": "&#039;",
   }[m]));
 }
 
-// Create a UTC timestamp from a date/time expressed in a known GMT offset.
-//
-// Example: "2026-02-20 23:30" at GMT+3
-// offsetMinutes = +180
-// UTC time = local time - offset
 function toUtcMsFromOffset(dateISO, time24, offsetMinutes) {
   const [y, m, d] = dateISO.split("-").map(Number);
   const [hh, mm] = time24.split(":").map(Number);
-
-  // Date.UTC uses a UTC clock, so we build "local clock as if it was UTC",
-  // then subtract the offset to get real UTC.
   const localAsUTC = Date.UTC(y, m - 1, d, hh, mm, 0, 0);
   return localAsUTC - offsetMinutes * 60 * 1000;
 }
@@ -242,79 +234,77 @@ function midpointMs(a, b) {
 // --- Flight key timestamps ---
 function getTripTimestamps() {
   const departNBO = toUtcMsFromOffset("2026-02-20", "23:30", +180); // GMT+3
-  const arriveCDG = toUtcMsFromOffset("2026-02-21", "06:40", +60);  // GMT+1
-  const departCDG = toUtcMsFromOffset("2026-02-21", "13:50", +60);  // GMT+1
-  const arriveRDU  = toUtcMsFromOffset("2026-02-21", "16:45", -300); // EST (GMT-5)
-
+  const arriveCDG = toUtcMsFromOffset("2026-02-21", "06:40", +60); // GMT+1
+  const departCDG = toUtcMsFromOffset("2026-02-21", "13:50", +60); // GMT+1
+  const arriveRDU = toUtcMsFromOffset("2026-02-21", "16:45", -300); // EST (GMT-5)
   return { departNBO, arriveCDG, departCDG, arriveRDU };
 }
 
 function buildRealSchedule() {
   const { departNBO, arriveCDG, departCDG, arriveRDU } = getTripTimestamps();
 
-  // Reminder moments (you can tweak these later)
   const schedule = [
     {
       atMs: addHours(departNBO, -3),
       title: "Pre-departure (3 hours to go)",
-      text: "Confirm passport, boarding pass, baggage limits, and that your essentials are in your carry-on."
+      text: "Confirm passport, boarding pass, baggage limits, and that your essentials are in your carry-on.",
     },
     {
       atMs: addMinutes(departNBO, -90),
       title: "Head to gate / check-in check",
-      text: "If you haven’t checked in, do it now. Confirm gate for AF 815 (NBO → CDG)."
+      text: "If you haven’t checked in, do it now. Confirm gate for AF 815 (NBO → CDG).",
     },
     {
       atMs: addMinutes(departNBO, -30),
       title: "Boarding soon",
-      text: "Stay near the gate. Keep passport + boarding pass in hand. Charge phone if needed."
+      text: "Stay near the gate. Keep passport + boarding pass in hand. Charge phone if needed.",
     },
     {
       atMs: midpointMs(departNBO, arriveCDG),
       title: "In-flight check",
-      text: "Hydrate, stretch when safe, and keep valuables secured. Prepare for CDG connection steps."
+      text: "Hydrate, stretch when safe, and keep valuables secured. Prepare for CDG connection steps.",
     },
     {
       atMs: addMinutes(arriveCDG, -20),
       title: "Approaching CDG",
-      text: "On arrival: check terminal + gate for AF 692. Confirm whether you must pass immigration/security."
+      text: "On arrival: check terminal + gate for AF 692. Confirm whether you must pass immigration/security.",
     },
     {
       atMs: addMinutes(arriveCDG, +25),
       title: "Layover plan (CDG)",
-      text: "Check next gate first, then water + light meal. Charge devices and be near the next gate 60–90 min before boarding."
+      text: "Check next gate first, then water + light meal. Charge devices and be near the next gate 60–90 min before boarding.",
     },
     {
       atMs: addMinutes(departCDG, -45),
       title: "Connection boarding soon",
-      text: "Re-check screens for gate changes. Get to the gate area early for CDG → RDU."
+      text: "Re-check screens for gate changes. Get to the gate area early for CDG → RDU.",
     },
     {
       atMs: midpointMs(departCDG, arriveRDU),
       title: "Second flight in-progress",
-      text: "Rest and hydrate. Keep any arrival forms ready (address, contact info, customs)."
+      text: "Rest and hydrate. Keep any arrival forms ready (address, contact info, customs).",
     },
     {
       atMs: addMinutes(arriveRDU, -30),
       title: "Arrival prep (RDU)",
-      text: "Prepare for immigration/customs, then confirm baggage claim belt and ground transport."
-    }
+      text: "Prepare for immigration/customs, then confirm baggage claim belt and ground transport.",
+    },
   ];
 
-  // Sort by time just in case
   schedule.sort((a, b) => a.atMs - b.atMs);
   return schedule;
 }
 
 function computeNextReminderText() {
   const now = Date.now();
-  const next = scheduledReminders.find(r => r.atMs > now);
+  const next = scheduledReminders.find((r) => r.atMs > now);
   if (!next) return "All delivered / none upcoming";
   return `${formatDateTimeLocal(next.atMs)} — ${next.title}`;
 }
 
 // --- Flight plan rendering ---
 function renderFlightPlan() {
+  if (!flightPlanEl) return;
   flightPlanEl.innerHTML = "";
 
   flightPlan.forEach((item, idx) => {
@@ -354,10 +344,12 @@ function saveDocsState(state) {
 }
 
 function renderDocsChecklist() {
+  if (!docsListEl) return;
+
   const state = loadDocsState();
   docsListEl.innerHTML = "";
 
-  defaultDocs.forEach(doc => {
+  defaultDocs.forEach((doc) => {
     const checked = !!state[doc.id];
     const row = document.createElement("label");
     row.className = "check";
@@ -371,7 +363,7 @@ function renderDocsChecklist() {
     docsListEl.appendChild(row);
   });
 
-  docsListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+  docsListEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
     cb.addEventListener("change", (e) => {
       const id = e.target.getAttribute("data-doc");
       const next = loadDocsState();
@@ -389,7 +381,9 @@ function resetDocs() {
 
 function markAllDocs() {
   const all = {};
-  defaultDocs.forEach(d => { all[d.id] = true; });
+  defaultDocs.forEach((d) => {
+    all[d.id] = true;
+  });
   saveDocsState(all);
   renderDocsChecklist();
   showToast("All documents marked.");
@@ -397,6 +391,8 @@ function markAllDocs() {
 
 // --- Reminders feed rendering ---
 function renderRemindersFeed() {
+  if (!remindersFeedEl) return;
+
   const feed = loadRemindersFeed();
   remindersFeedEl.innerHTML = "";
 
@@ -408,7 +404,7 @@ function renderRemindersFeed() {
     return;
   }
 
-  feed.forEach(item => {
+  feed.forEach((item) => {
     const el = document.createElement("div");
     el.className = "feed-item";
     el.innerHTML = `
@@ -424,7 +420,7 @@ function renderRemindersFeed() {
 
 // --- Reminders engine (real schedule) ---
 function stopReminders() {
-  reminderTimers.forEach(t => clearTimeout(t));
+  reminderTimers.forEach((t) => clearTimeout(t));
   reminderTimers = [];
 
   if (tickerTimer) {
@@ -433,8 +429,8 @@ function stopReminders() {
   }
 
   scheduledReminders = [];
-  reminderStatusEl.textContent = "Not started";
-  nextReminderEl.textContent = "—";
+  if (reminderStatusEl) reminderStatusEl.textContent = "Not started";
+  if (nextReminderEl) nextReminderEl.textContent = "—";
 }
 
 function startReminders() {
@@ -443,35 +439,29 @@ function startReminders() {
   const schedule = buildRealSchedule();
   const now = Date.now();
 
-  // Keep full schedule for "Next reminder" display, but only set timers for future ones
   scheduledReminders = schedule.slice();
-
-  const upcoming = schedule.filter(r => r.atMs > now);
+  const upcoming = schedule.filter((r) => r.atMs > now);
   const skipped = schedule.length - upcoming.length;
 
   if (upcoming.length === 0) {
-    reminderStatusEl.textContent = "No upcoming reminders";
-    nextReminderEl.textContent = "All delivered / none upcoming";
+    if (reminderStatusEl) reminderStatusEl.textContent = "No upcoming reminders";
+    if (nextReminderEl) nextReminderEl.textContent = "All delivered / none upcoming";
     showToast("All reminder times have already passed for this trip date.");
     return;
   }
 
-  reminderStatusEl.textContent = skipped > 0 ? `Running (${skipped} skipped)` : "Running";
-  nextReminderEl.textContent = computeNextReminderText();
+  if (reminderStatusEl) reminderStatusEl.textContent = skipped > 0 ? `Running (${skipped} skipped)` : "Running";
+  if (nextReminderEl) nextReminderEl.textContent = computeNextReminderText();
 
-  // Schedule each upcoming reminder
-  upcoming.forEach(rem => {
+  upcoming.forEach((rem) => {
     const delay = rem.atMs - now;
     const timer = setTimeout(() => {
       const payload = { title: rem.title, text: rem.text };
       pushReminderToFeed(payload);
       notifyUser(rem.title, rem.text);
 
-      // After firing, update next reminder info
-      nextReminderEl.textContent = computeNextReminderText();
-
-      // If none left, mark completed
-      if (nextReminderEl.textContent === "All delivered / none upcoming") {
+      if (nextReminderEl) nextReminderEl.textContent = computeNextReminderText();
+      if (reminderStatusEl && nextReminderEl && nextReminderEl.textContent === "All delivered / none upcoming") {
         reminderStatusEl.textContent = "Completed";
       }
     }, delay);
@@ -479,16 +469,15 @@ function startReminders() {
     reminderTimers.push(timer);
   });
 
-  // Live ticker refresh
   tickerTimer = setInterval(() => {
-    nextReminderEl.textContent = computeNextReminderText();
-    if (nextReminderEl.textContent === "All delivered / none upcoming") {
+    if (nextReminderEl) nextReminderEl.textContent = computeNextReminderText();
+    if (nextReminderEl && nextReminderEl.textContent === "All delivered / none upcoming") {
       clearInterval(tickerTimer);
       tickerTimer = null;
     }
   }, 1000);
 
-  showToast(`Reminders scheduled for your trip date. Upcoming: ${upcoming.length}${skipped ? ` (skipped: ${skipped})` : ""}.`);
+  showToast(`Reminders scheduled. Upcoming: ${upcoming.length}${skipped ? ` (skipped: ${skipped})` : ""}.`);
 }
 
 // --- Notifications permission ---
@@ -547,13 +536,13 @@ function buildPlanText() {
     "",
     "Sat, Feb 21, 2026",
     "4:45 PM EST",
-    "Arrive Raleigh/Durham (RDU)"
+    "Arrive Raleigh/Durham (RDU)",
   ].join("\n");
 }
 
 // --- Simple “concierge” buttons handler (copy/toast) ---
 function bindConciergeActions() {
-  document.querySelectorAll("[data-action]").forEach(btn => {
+  document.querySelectorAll("[data-action]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const action = btn.getAttribute("data-action");
       if (action === "toast") {
@@ -566,81 +555,230 @@ function bindConciergeActions() {
   });
 }
 
-// --- View switch ---
+/* ========= Side Nav (NEW) ========= */
+function openSideNav() {
+  if (!sideNav || !navOverlay || !menuBtn) return;
+  sideNav.classList.remove("hidden");
+  navOverlay.classList.remove("hidden");
+  menuBtn.setAttribute("aria-expanded", "true");
+}
+
+function closeSideNav() {
+  if (!sideNav || !navOverlay || !menuBtn) return;
+  sideNav.classList.add("hidden");
+  navOverlay.classList.add("hidden");
+  menuBtn.setAttribute("aria-expanded", "false");
+}
+
+function setActiveLink(targetId) {
+  document.querySelectorAll(".side-link").forEach((btn) => {
+    const isActive = btn.getAttribute("data-view") === targetId;
+    btn.classList.toggle("active", isActive);
+  });
+}
+
+function showView(targetId, scroll = true) {
+  views.forEach((v) => {
+    if (v.id === targetId) v.classList.remove("hidden");
+    else v.classList.add("hidden");
+  });
+
+  setActiveLink(targetId);
+
+  if (scroll) {
+    const el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function setDashboardDefault() {
+  showView("welcomeCard", false);
+}
+
+function showAppNav() {
+  if (menuBtn) menuBtn.classList.remove("hidden");
+}
+
+function hideAppNav() {
+  if (menuBtn) menuBtn.classList.add("hidden");
+  closeSideNav();
+}
+
+/* ========= Profile Picture (NEW, cleaned) ========= */
+function loadSavedAvatar() {
+  try {
+    const savedAvatar = localStorage.getItem(SAVED_AVATAR_KEY);
+    if (savedAvatar && avatarImage && avatarPlaceholder) {
+      avatarImage.src = savedAvatar;
+      avatarImage.classList.remove("hidden");
+      avatarPlaceholder.classList.add("hidden");
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function saveAvatar(dataUrl) {
+  try {
+    localStorage.setItem(SAVED_AVATAR_KEY, dataUrl);
+  } catch {
+    // ignore
+  }
+}
+
+function setupProfileAvatar() {
+  if (!profileAvatar || !profileInput) return;
+
+  profileAvatar.addEventListener("click", () => profileInput.click());
+
+  profileInput.addEventListener("change", () => {
+    const file = profileInput.files && profileInput.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl !== "string") return;
+
+      if (avatarImage && avatarPlaceholder) {
+        avatarImage.src = dataUrl;
+        avatarImage.classList.remove("hidden");
+        avatarPlaceholder.classList.add("hidden");
+      }
+
+      saveAvatar(dataUrl);
+      showToast("Profile picture updated.");
+    };
+    reader.readAsDataURL(file);
+  });
+
+  loadSavedAvatar();
+}
+
+/* ========= View switch ========= */
 function showApp(username) {
-  loginView.classList.add("hidden");
-  appView.classList.remove("hidden");
+  if (loginView) loginView.classList.add("hidden");
+  if (appView) appView.classList.remove("hidden");
 
-  userBadge.classList.remove("hidden");
-  logoutBtn.classList.remove("hidden");
+  if (userBadge) userBadge.classList.remove("hidden");
+  if (logoutBtn) logoutBtn.classList.remove("hidden");
 
-  badgeName.textContent = username;
-  usernameDisplay.textContent = username;
+  if (badgeName) badgeName.textContent = username;
+  if (usernameDisplay) usernameDisplay.textContent = username;
+
+  showAppNav();
+  setDashboardDefault();
 
   renderFlightPlan();
   renderDocsChecklist();
   renderRemindersFeed();
   bindConciergeActions();
+  setupProfileAvatar();
 }
 
 function showLogin() {
-  appView.classList.add("hidden");
-  loginView.classList.remove("hidden");
+  if (appView) appView.classList.add("hidden");
+  if (loginView) loginView.classList.remove("hidden");
 
-  userBadge.classList.add("hidden");
-  logoutBtn.classList.add("hidden");
+  if (userBadge) userBadge.classList.add("hidden");
+  if (logoutBtn) logoutBtn.classList.add("hidden");
 
+  hideAppNav();
   stopReminders();
   setLoginError("");
 }
 
-// --- Login logic ---
-loginForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  setLoginError("");
-
-  const u = (loginUsername.value || "").trim();
-  const p = (loginPassword.value || "").trim();
-
-  if (u === DEMO_USERNAME && p === DEMO_PASSWORD) {
-    saveSessionUser(u);
-    showApp(u);
-    showToast("Welcome! Your flight plan is ready.");
-  } else {
-    setLoginError("Invalid username or password. Try the demo credentials.");
+/* ========= Bind side nav events (NEW) ========= */
+function bindSideNav() {
+  if (menuBtn) {
+    menuBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openSideNav();
+    });
   }
-});
 
-fillDemo.addEventListener("click", () => {
-  loginUsername.value = DEMO_USERNAME;
-  loginPassword.value = DEMO_PASSWORD;
-  showToast("Demo credentials filled.");
-});
+  if (closeNavBtn) closeNavBtn.addEventListener("click", closeSideNav);
+  if (navOverlay) navOverlay.addEventListener("click", closeSideNav);
 
-logoutBtn.addEventListener("click", () => {
-  clearSessionUser();
-  showLogin();
-  showToast("Logged out.");
-});
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSideNav();
+  });
+
+  document.querySelectorAll(".side-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.getAttribute("data-view");
+      if (target) showView(target);
+      closeSideNav();
+    });
+  });
+}
+
+/* ========= Login logic ========= */
+if (loginForm) {
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    setLoginError("");
+
+    const u = (loginUsername?.value || "").trim();
+    const p = (loginPassword?.value || "").trim();
+
+    if (u === DEMO_USERNAME && p === DEMO_PASSWORD) {
+      saveSessionUser(u);
+      showApp(u);
+      showToast("Welcome! Your flight plan is ready.");
+    } else {
+      setLoginError("Invalid username or password. Try the demo credentials.");
+    }
+  });
+}
+
+if (fillDemo) {
+  fillDemo.addEventListener("click", () => {
+    if (loginUsername) loginUsername.value = DEMO_USERNAME;
+    if (loginPassword) loginPassword.value = DEMO_PASSWORD;
+    showToast("Demo credentials filled.");
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    clearSessionUser();
+    showLogin();
+    showToast("Logged out.");
+  });
+}
 
 // --- Buttons ---
-enableNotifsBtn.addEventListener("click", enableNotifications);
-startRemindersBtn.addEventListener("click", startReminders);
+if (enableNotifsBtn) enableNotifsBtn.addEventListener("click", enableNotifications);
+if (startRemindersBtn) startRemindersBtn.addEventListener("click", startReminders);
 
-copyPlanBtn.addEventListener("click", async () => {
-  await copyText(buildPlanText());
-});
+if (copyPlanBtn) {
+  copyPlanBtn.addEventListener("click", async () => {
+    await copyText(buildPlanText());
+  });
+}
 
-resetDocsBtn.addEventListener("click", resetDocs);
-markAllDocsBtn.addEventListener("click", markAllDocs);
+if (resetDocsBtn) resetDocsBtn.addEventListener("click", resetDocs);
+if (markAllDocsBtn) markAllDocsBtn.addEventListener("click", markAllDocs);
 
-clearRemindersBtn.addEventListener("click", () => {
-  clearRemindersFeed();
-  showToast("Reminders cleared.");
-});
+if (clearRemindersBtn) {
+  clearRemindersBtn.addEventListener("click", () => {
+    clearRemindersFeed();
+    showToast("Reminders cleared.");
+  });
+}
 
-// --- Init: restore session if exists ---
+/* ========= Init ========= */
 (function init() {
+  bindSideNav();
+  setupProfileAvatar(); // so avatar loads even on login screen if visible
+
   const session = getSessionUser();
   if (session && session.username) {
     showApp(session.username);
